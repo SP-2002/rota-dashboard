@@ -5,7 +5,7 @@ import plotly.express as px
 import pandas as pd
 import numpy as np
 
-# ── DATA ──────────────────────────────────────────────────────
+# ── DATA
 sol = pd.read_csv("rota_solution.csv")
 
 nurses_meta = {
@@ -28,7 +28,7 @@ night_starters_thu = [d for d in range(56) if d%7==3]
 assigned = set(zip(sol["Nurse"], sol["Day"], sol["Shift"]))
 def works(n,d,s): return (n,d,s) in assigned
 
-# ── COLOUR PALETTE (neutral, professional) ────────────────────
+# ── COLOUR PALETTE
 C_DARK   = "#1a1a2e"
 C_MID    = "#444466"
 C_TEAL   = "#2a9d8f"
@@ -44,7 +44,7 @@ TEAM_COLORS  = {"A": C_TEAL,"B": C_BLUE,"C": C_AMBER,"D": C_RED,"E": C_MID}
 
 FONT = "Inter, Helvetica Neue, Arial, sans-serif"
 
-# ── LAYOUT HELPERS ────────────────────────────────────────────
+# ── LAYOUT HELPERS
 def card(children, style=None):
     s = {
         "background": C_WHITE,
@@ -92,13 +92,13 @@ def base_layout(title=""):
         colorway=[C_TEAL, C_BLUE, C_DARK, C_AMBER, C_RED],
     )
 
-# ── APP ───────────────────────────────────────────────────────
+# ── APP
 app = dash.Dash(__name__, title="Rota Dashboard · MedModus")
 server = app.server  # for deployment
 
 app.layout = html.Div([
 
-    # ── HEADER ──────────────────────────────────────────────
+    # ── HEADER 
     html.Div([
         html.Div([
             html.Span("🏥", style={"fontSize":"22px","marginRight":"10px"}),
@@ -118,7 +118,7 @@ app.layout = html.Div([
         "fontFamily": FONT,
     }),
 
-    # ── TABS ────────────────────────────────────────────────
+    # ── TABS
     html.Div([
         dcc.Tabs(id="tabs", value="overview", children=[
             dcc.Tab(label="Overview",         value="overview"),
@@ -130,7 +130,7 @@ app.layout = html.Div([
         colors={"border":C_BORDER,"primary":C_TEAL,"background":C_LIGHT}),
     ], style={"padding":"0 32px","background":C_WHITE,"borderBottom":f"1px solid {C_BORDER}"}),
 
-    # ── CONTENT ─────────────────────────────────────────────
+    # ── CONTENT
     html.Div(id="tab-content", style={
         "padding":"24px 32px","background":C_LIGHT,
         "minHeight":"calc(100vh - 110px)","fontFamily":FONT,
@@ -139,7 +139,7 @@ app.layout = html.Div([
 ], style={"fontFamily":FONT,"background":C_LIGHT})
 
 
-# ── TAB ROUTER ────────────────────────────────────────────────
+# ── TAB ROUTER
 @app.callback(Output("tab-content","children"), Input("tabs","value"))
 def render(tab):
     if tab == "overview":  return render_overview()
@@ -149,7 +149,7 @@ def render(tab):
     if tab == "rest":      return render_rest()
 
 
-# ── TAB 1: OVERVIEW ───────────────────────────────────────────
+# ── TAB 1: OVERVIEW
 def render_overview():
     totals   = sol.groupby("Nurse").size().reindex(range(10), fill_value=0)
     weekends = sol[sol["IsWeekend"]==1].groupby("Nurse").size().reindex(range(10), fill_value=0)
@@ -198,7 +198,7 @@ def render_overview():
     ])
 
 
-# ── TAB 2: WEEKLY ROTA ────────────────────────────────────────
+# ── TAB 2: WEEKLY ROTA
 def render_weekly():
     return html.Div([
         card([
@@ -277,7 +277,7 @@ def update_weekly(week):
     ])
 
 
-# ── TAB 3: FAIRNESS ───────────────────────────────────────────
+# ── TAB 3: FAIRNESS
 def render_fairness():
     nurses   = [f"N{n}" for n in range(10)]
     totals   = sol.groupby("Nurse").size().reindex(range(10), fill_value=0).values
@@ -310,8 +310,8 @@ def render_fairness():
     fig_heatmap.update_layout(
         **base_layout("Weekly shift load — all nurses (max 4 per week)"),
         height=320,
-        xaxis=dict(side="bottom"),
     )
+    fig_heatmap.update_xaxes(side="bottom")
 
     seq_counts = []
     for n in range(10):
@@ -340,7 +340,7 @@ def render_fairness():
     ])
 
 
-# ── TAB 4: TEAM COVERAGE ──────────────────────────────────────
+# ── TAB 4: TEAM COVERAGE
 def render_teams():
     teams = ["A","B","C","D","E"]
     team_shift = {}
@@ -421,7 +421,7 @@ def render_teams():
     ])
 
 
-# ── TAB 5: REST & LEAVE ───────────────────────────────────────
+# ── TAB 5: REST & LEAVE
 def render_rest():
     fig = go.Figure()
 
@@ -470,19 +470,16 @@ def render_rest():
     for w in range(9):
         fig.add_vline(x=w*7, line_color="#dddddd", line_width=1)
 
-    fig.update_layout(
-        **base_layout("Night sequences and leave — 56-day timeline"),
-        yaxis=dict(tickvals=list(range(10)),
-                   ticktext=[f"Nurse {n}" for n in range(10)],
-                   gridcolor="#f0f0f0"),
-        xaxis=dict(title="Day", tickmode="array",
-                   tickvals=[i*7 for i in range(9)],
-                   ticktext=[f"W{i+1}" for i in range(8)] + [""],
-                   showgrid=False),
-        height=380,
-        hovermode="closest",
-        legend=dict(orientation="h", y=-0.12, font_size=11),
-    )
+    fig.update_layout(**base_layout("Night sequences and leave — 56-day timeline"),
+                        height=380, hovermode="closest")
+    fig.update_layout(legend=dict(orientation="h", y=-0.12, font_size=11))
+    fig.update_yaxes(tickvals=list(range(10)),
+                     ticktext=[f"Nurse {n}" for n in range(10)],
+                     gridcolor="#f0f0f0")
+    fig.update_xaxes(title="Day", tickmode="array",
+                     tickvals=[i*7 for i in range(9)],
+                     ticktext=[f"W{i+1}" for i in range(8)] + [""],
+                     showgrid=False)
 
     leave_table = [
         {"Nurse": r["Nurse"], "Start Day": r["Start_Day"],
@@ -540,6 +537,6 @@ def render_rest():
     ])
 
 
-# ── RUN ───────────────────────────────────────────────────────
+# ── RUN
 if __name__ == "__main__":
     app.run(debug=False, port=8050)
